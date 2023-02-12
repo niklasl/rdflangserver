@@ -1,0 +1,9 @@
+/build
+/cache
+/dist
+/.mypy_cache
+/*.egg-info
+__pycache__
+
+*.sw[f-p]
+Session.vim

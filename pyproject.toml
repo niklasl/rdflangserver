@@ -1,0 +1,22 @@
+[build-system]
+requires = [
+    "setuptools>=42",
+    "setuptools-scm"
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rdflangserver"
+version = "0.1.0-dev"
+#dynamic = ["version"]
+authors = [
+    {name = "Niklas Lindström", email = "lindstream@gmail.com"},
+]
+description = "An RDF LSP implementation based on RDFLib, with support for various syntaxes of RDF."
+dependencies = [
+    "rdflib",
+    "pygls",
+]
+
+[project.scripts]
+rdflangserver = "rdflangserver.server:main"
