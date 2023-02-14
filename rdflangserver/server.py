@@ -55,7 +55,7 @@ def definition(params: TypeDefinitionParams):
     doc_uri = rdfcompleter.graphcache.get_fs_path(ns)
 
     # Find line of symbol:
-    document = server.workspace.get_document(quote(doc_uri))
+    document = server.workspace.get_document(quote(str(doc_uri)))
 
     at_line, col = rdfcompleter.find_term_definition(document.lines, ns, lname)
 

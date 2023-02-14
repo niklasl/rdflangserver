@@ -78,20 +78,22 @@ class GraphCache:
             return self.graph.get_context(context_id)
 
         cache_path = self.get_fs_path(url)
-        if os.path.exists(cache_path):
+        if cache_path.exists() and cache_path.stat().st_size > 0:
             logger.debug("Load local copy of <%s> from '%s'", context_id, cache_path)
-            return self.graph.parse(cache_path, format='turtle', publicID=context_id)
+            return self.graph.parse(
+                str(cache_path), format='turtle', publicID=context_id
+            )
         else:
             logger.debug("Fetching <%s> to '%s'", context_id, cache_path)
             graph = self.graph.parse(
                 src, format='rdfa' if url.endswith('html') else None
             )
-            with open(cache_path, 'w') as f:
+            with cache_path.open('wb') as f:
                 graph.serialize(f, format='turtle')
             return graph
 
-    def get_fs_path(self, url):
-        return os.path.join(self.cachedir, quote(url, safe="")) + '.ttl'
+    def get_fs_path(self, url: str) -> Path:
+        return self.cachedir / (quote(url, safe="") + '.ttl')
 
 
 class PrefixCache:
