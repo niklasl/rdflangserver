@@ -60,27 +60,28 @@ def definition(params: TypeDefinitionParams):
 
     doc_uri = rdfcompleter.graphcache.get_fs_path(ns)
 
-    # Find line of symbol: # TODO: find in workspace doc, not on "server disk"?
-    with open(doc_uri) as f:
-        prefixes: dict[str, str] = {}
+    # Find line of symbol:
+    document = server.workspace.get_document(quote(doc_uri))
+    prefixes: dict[str, str] = {}
 
-        expanded_term = f"<{ns}{lname}>"
-        col = -1
-        for at_line, l in enumerate(f):
-            if at_line < MAX_LINE_SCAN:
-                for def_pfx, def_ns in get_pfxns(l):
+    expanded_term = f"<{ns}{lname}>"
+    col = -1
+    for at_line, l in enumerate(document.lines):
+        if at_line < MAX_LINE_SCAN:
+            for def_pfx, def_ns in get_pfxns(l):
+                if def_ns not in prefixes:
                     prefixes[def_ns] = def_pfx
 
-            dpfx = prefixes.get(ns)
-            defterm = f"{dpfx}:{lname}" if dpfx is not None else expanded_term
+        dpfx = prefixes.get(ns)
+        defterm = f"{dpfx}:{lname}" if dpfx is not None else expanded_term
 
-            m = re.search(fr"^{re.escape(defterm)}\b", l)
-            if m:
-                col = 0
-                break
-        else:
-            at_line = 0
+        m = re.search(fr"^{re.escape(defterm)}\b", l)
+        if m:
             col = 0
+            break
+    else:
+        at_line = 0
+        col = 0
 
     pos = Position(line=at_line, character=col)
     rng = Range(start=pos, end=pos)
