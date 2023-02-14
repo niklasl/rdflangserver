@@ -62,31 +62,13 @@ def definition(params: TypeDefinitionParams):
 
     # Find line of symbol:
     document = server.workspace.get_document(quote(doc_uri))
-    prefixes: dict[str, str] = {}
 
-    expanded_term = f"<{ns}{lname}>"
-    col = -1
-    for at_line, l in enumerate(document.lines):
-        if at_line < MAX_LINE_SCAN:
-            for def_pfx, def_ns in get_pfxns(l):
-                if def_ns not in prefixes:
-                    prefixes[def_ns] = def_pfx
-
-        dpfx = prefixes.get(ns)
-        defterm = f"{dpfx}:{lname}" if dpfx is not None else expanded_term
-
-        m = re.search(fr"^{re.escape(defterm)}\b", l)
-        if m:
-            col = 0
-            break
-    else:
-        at_line = 0
-        col = 0
+    at_line, col = rdfcompleter.find_term_definition(document.lines, ns, lname)
 
     pos = Position(line=at_line, character=col)
     rng = Range(start=pos, end=pos)
     return LocationLink(
-        target_uri=quote(doc_uri), target_range=rng, target_selection_range=rng
+        target_uri=document.uri, target_range=rng, target_selection_range=rng
     )
 
 

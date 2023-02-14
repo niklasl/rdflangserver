@@ -121,6 +121,31 @@ class RdfCompleter:
             if pfx.startswith(base)
         ]
 
+    def find_term_definition(
+        self, lines: Lines, ns: str, lname: str
+    ) -> tuple[int, int]:
+        prefixes: dict[str, str] = {}
+        expanded_term = f"<{ns}{lname}>"
+        col = -1
+        for at_line, l in enumerate(lines):
+            if at_line < MAX_LINE_SCAN:
+                for def_pfx, def_ns in get_pfxns(l):
+                    if def_ns not in prefixes:
+                        prefixes[def_ns] = def_pfx
+
+            dpfx = prefixes.get(ns)
+            defterm = f"{dpfx}:{lname}" if dpfx is not None else expanded_term
+
+            m = re.search(fr"^{re.escape(defterm)}\b", l)
+            if m:
+                col = 0
+                break
+        else:
+            at_line = 0
+            col = 0
+
+        return at_line, col
+
 
 if __name__ == '__main__':
     import logging
