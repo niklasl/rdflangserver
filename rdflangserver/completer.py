@@ -86,7 +86,9 @@ class RdfCompleter:
             if ':' in term:
                 return sorted(
                     Completion(
-                        key, res.value(RDF.type).qname(), res.value(RDFS.comment)
+                        key,
+                        res.value(RDF.type).qname() if res.value(RDF.type) else None,
+                        res.value(RDFS.comment),
                     )
                     for key, res in terms.items()
                     if key.startswith(trail)
