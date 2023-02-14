@@ -121,6 +121,21 @@ class RdfCompleter:
             if pfx.startswith(base)
         ]
 
+    def get_term(
+        self, buffer: Lines, line: str, col: int, lang: str | None = None
+    ) -> tuple[str | None, str]:
+        term = get_term_at(line, col)
+        if not term:
+            return None, ''
+
+        if ':' not in term:  # OK in RDF/XML and JSON-LD (and special in RDFa)
+            return None, ''
+
+        pfx, lname = term.split(':', 1)
+        ns = self.expand_pfx(buffer, pfx)
+
+        return ns, lname or ''
+
     def find_term_definition(
         self, lines: Lines, ns: str, lname: str
     ) -> tuple[int, int]:

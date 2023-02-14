@@ -45,16 +45,10 @@ def completions(params: CompletionParams):
 def definition(params: TypeDefinitionParams):
     document, line, pos = _get_doc_line_and_pos(params)
     col = pos.character
-    term = get_term_at(line, col)
-    if not term:
-        return
 
-    if ':' not in term:  # OK in RDF/XML and JSON-LD (and special in RDFa)
-        return
-
-    pfx, lname = term.split(':', 1)
-
-    ns = rdfcompleter.expand_pfx(document.lines, pfx)
+    ns, lname = rdfcompleter.get_term(
+        document.lines, line, col, lang=document.language_id
+    )
     if not ns:
         return
 
