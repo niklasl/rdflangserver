@@ -4,7 +4,9 @@ import re
 from itertools import chain
 from typing import Iterable, NamedTuple
 
+from rdflib import ConjunctiveGraph
 from rdflib.namespace import RDF, RDFS, split_uri  # type: ignore[import]
+from rdflib.plugins.parsers.notation3 import BadSyntax
 
 from .cache import GraphCache, PrefixCache
 from .keywords import LANG_KEYWORDS
@@ -160,6 +162,22 @@ class RdfCompleter:
             col = 0
 
         return at_line, col
+
+    def check(self, buffer: Lines, lang: str | None = None) -> Iterable:
+        if lang == 'sparql':
+            return
+        try:
+            # TODO: io wrapper to iterate over buffer directly?
+            data = ''.join(buffer)
+            ConjunctiveGraph().parse(data=data, format=lang)
+        except BadSyntax as e:
+            lastnl = data[: e._i].rfind('\n')
+            if e._i >= 0:
+                col = e._i - lastnl - 1
+            else:
+                col = len(data)
+
+            yield e.lines, col, e._why
 
 
 if __name__ == '__main__':

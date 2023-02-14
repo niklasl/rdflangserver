@@ -4,11 +4,15 @@ import re
 from urllib.parse import quote
 
 from lsprotocol.types import (TEXT_DOCUMENT_COMPLETION,
-                              TEXT_DOCUMENT_DEFINITION, CompletionItem,
+                              TEXT_DOCUMENT_DEFINITION,
+                              TEXT_DOCUMENT_DID_CHANGE, TEXT_DOCUMENT_DID_OPEN,
+                              TEXT_DOCUMENT_DID_SAVE, CompletionItem,
                               CompletionList, CompletionOptions,
-                              CompletionParams, DefinitionOptions,
-                              LocationLink, Position, Range,
-                              TypeDefinitionParams)
+                              CompletionParams, DefinitionOptions, Diagnostic,
+                              DiagnosticOptions, DidChangeTextDocumentParams,
+                              DidOpenTextDocumentParams,
+                              DidSaveTextDocumentParams, LocationLink,
+                              Position, Range, TypeDefinitionParams)
 from pygls.server import LanguageServer
 
 from .completer import MAX_LINE_SCAN, RdfCompleter, get_pfxns, get_pfxns_map
@@ -64,6 +68,37 @@ def definition(params: TypeDefinitionParams):
     return LocationLink(
         target_uri=document.uri, target_range=rng, target_selection_range=rng
     )
+
+
+@server.feature(TEXT_DOCUMENT_DID_OPEN)
+async def did_open(ls, params: DidOpenTextDocumentParams):
+    _check(ls, params)
+
+
+@server.feature(TEXT_DOCUMENT_DID_CHANGE)
+async def did_change(ls, params: DidChangeTextDocumentParams):
+    _check(ls, params)
+
+
+@server.feature(TEXT_DOCUMENT_DID_SAVE)
+async def did_save(ls, params: DidSaveTextDocumentParams):
+    _check(ls, params)
+
+
+def _check(ls, params):
+    document = ls.workspace.get_document(params.text_document.uri)
+
+    errors = rdfcompleter.check(document.lines, lang=document.language_id)
+
+    diagnostics = [
+        Diagnostic(
+            range=Range(start=Position(line, col), end=Position(line, col)),
+            message=msg,
+        )
+        for line, col, msg in errors
+    ]
+
+    ls.publish_diagnostics(document.uri, diagnostics)
 
 
 def _get_doc_line_and_pos(params):
