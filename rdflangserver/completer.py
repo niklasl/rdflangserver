@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import re
+from itertools import chain
 from typing import Iterable, NamedTuple
 
 from rdflib.namespace import RDF, RDFS, split_uri  # type: ignore[import]
 
 from .cache import GraphCache, PrefixCache
+from .keywords import LANG_KEYWORDS
 from .utils import get_term_at
 
 MAX_LINE_SCAN = 80
@@ -38,6 +40,7 @@ class RdfCompleter:
         self.graphcache = GraphCache(cachedir)
         self.prefixes = PrefixCache(self.graphcache.cachedir / 'prefixes.ttl')
         self._terms_by_ns = {}
+        self._keywords = LANG_KEYWORDS
 
     def get_vocab_terms(self, ns):
         terms = self._terms_by_ns.get(ns)
@@ -58,7 +61,9 @@ class RdfCompleter:
                 pass
         self._terms_by_ns[ns] = terms  # TODO: OrderedDict
 
-    def get_completions(self, buffer: Lines, line: str, col: int) -> list[Completion]:
+    def get_completions(
+        self, buffer: Lines, line: str, col: int, lang: str | None = None
+    ) -> list[Completion]:
         term = get_term_at(line, col - 1)
         assert term is not None
         pfx, cln, trail = term.partition(':')
@@ -66,7 +71,7 @@ class RdfCompleter:
         prefixdecl = line.split(':')[0].strip()
         pfx_fmt = (
             '%s: <%s>'
-            if prefixdecl.startswith(('prefix', '@prefix'))
+            if prefixdecl.startswith(('PREFIX', 'prefix', '@prefix'))
             else '%s="%s"'
             if prefixdecl == 'xmlns'
             else None
@@ -94,7 +99,8 @@ class RdfCompleter:
                     if key.startswith(trail)
                 )
 
-            curies = [pfx + ':' for pfx in sorted(pfxns)] + list(terms)
+            keywords = self._keywords.get(lang, [])
+            curies = chain((pfx + ':' for pfx in sorted(pfxns)), terms, keywords)
             results = (curie for curie in curies if curie.startswith(trail))
 
         return [Completion(value) for value in results]

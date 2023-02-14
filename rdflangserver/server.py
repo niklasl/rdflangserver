@@ -23,7 +23,9 @@ rdfcompleter = RdfCompleter()
 @server.feature(TEXT_DOCUMENT_COMPLETION, CompletionOptions(resolve_provider=True))
 def completions(params: CompletionParams):
     document, line, pos = _get_doc_line_and_pos(params)
-    values = rdfcompleter.get_completions(document.lines, line, pos.character)
+    values = rdfcompleter.get_completions(
+        document.lines, line, pos.character, lang=document.language_id
+    )
     items = [
         CompletionItem(
             label=it.label,
